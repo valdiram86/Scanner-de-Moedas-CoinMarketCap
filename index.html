@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scanner de Moedas – CoinMarketCap</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+    }
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #333;
+      color: white;
+    }
+    .saudavel {
+      background-color: #d4edda;
+    }
+    .oportunidade {
+      background-color: #fff3cd;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Scanner CoinMarketCap – Liquidez Saudável</h1>
+<table id="tabela">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Nome</th>
+      <th>Símbolo</th>
+      <th>24h</th>
+      <th>7d</th>
+      <th>30d</th>
+      <th>Vol/MCap</th>
+      <th>Classificação</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Dados inseridos por JS -->
+  </tbody>
+</table>
+
+<script>
+  const API_KEY = 'SUA_API_KEY_AQUI'; // <- Substitua aqui
+
+  async function buscarMoedas() {
+    const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=2500&convert=USD';
+
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-CMC_PRO_API_KEY': API_KEY
+        }
+      });
+
+      const json = await res.json();
+      const moedas = json.data;
+
+      const tabela = document.getElementById('tabela').querySelector('tbody');
+      let contador = 1;
+
+      moedas.forEach(moeda => {
+        const d = moeda.quote.USD;
+        const vol = d.volume_24h;
+        const cap = d.market_cap;
+
+        if (!d.percent_change_24h || !d.percent_change_7d || !d.percent_change_30d || !cap || !vol) return;
+
+        const variacao24h = d.percent_change_24h;
+        const variacao7d = d.percent_change_7d;
+        const variacao30d = d.percent_change_30d;
+
+        const relacao = vol / cap;
+        const relacaoFormatada = relacao.toFixed(2);
+
+        if (
+          variacao24h > 0 &&
+          variacao7d > 0 &&
+          variacao30d > 0 &&
+          relacao >= 0.3 &&
+          relacao <= 1.0
+        ) {
+          let classificacao = '';
+          let classe = '';
+
+          if (relacao >= 0.3 && relacao < 0.5) {
+            classificacao = '✅ Saudável';
+            classe = 'saudavel';
+          } else if (relacao >= 0.5 && relacao <= 1.0) {
+            classificacao = '✅ Oportunidade';
+            classe = 'oportunidade';
+          }
+
+          const linha = document.createElement('tr');
+          linha.className = classe;
+
+          linha.innerHTML = `
+            <td>${contador++}</td>
+            <td>${moeda.name}</td>
+            <td>${moeda.symbol}</td>
+            <td>${variacao24h.toFixed(2)}%</td>
+            <td>${variacao7d.toFixed(2)}%</td>
+            <td>${variacao30d.toFixed(2)}%</td>
+            <td>${relacaoFormatada}</td>
+            <td>${classificacao}</td>
+          `;
+
+          tabela.appendChild(linha);
+        }
+      });
+    } catch (err) {
+      alert("Erro ao buscar dados: " + err.message);
+    }
+  }
+
+  buscarMoedas();
+</script>
+
+</body>
+</html>
